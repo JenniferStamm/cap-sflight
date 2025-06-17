@@ -2,6 +2,8 @@ package com.sap.cap.sflight.processor;
 
 import static cds.gen.travelservice.TravelService_.TRAVEL;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.sap.cds.ql.Update;
@@ -22,6 +24,8 @@ import cds.gen.travelservice.Travel_;
 @Component
 @ServiceName(TravelService_.CDS_NAME)
 public class AcceptRejectHandler implements EventHandler {
+
+	private static final Logger log = LoggerFactory.getLogger(AcceptRejectHandler.class);
 
 	private static final String TRAVEL_STATUS_OPEN = "O";
 	private static final String TRAVEL_STATUS_ACCEPTED = "A";
@@ -58,6 +62,8 @@ public class AcceptRejectHandler implements EventHandler {
 	@On(entity = Travel_.CDS_NAME)
 	public void onAcceptTravel(final TravelAcceptTravelContext context) {
 		Travel travel = draftService.run(context.cqn()).single(Travel.class);
+		log.info("Accepting travel with ID: {}", travel.travelID());
+
 		context.getCdsRuntime().requestContext().privilegedUser().run(ctx -> {
 			updateStatusForTravelId(travel.travelUUID(), TRAVEL_STATUS_ACCEPTED, travel.isActiveEntity());
 		});

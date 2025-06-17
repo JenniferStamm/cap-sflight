@@ -26,6 +26,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.sap.cds</groupId>
+      <artifactId>cds-feature-capuccino-remote-monitoring</artifactId>
+      <version>4.1.0-PLAYGROUND</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <scope>runtime</scope>
