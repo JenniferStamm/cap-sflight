@@ -16,10 +16,12 @@ cds:
     - name: amy
       roles:
         - processor
+        - cds.Developer
     - name: admin
       password: admin
       roles:
       - admin
+      - cds.Developer
 
     odata-v4:
         endpoint:
@@ -38,10 +40,19 @@ spring:
     config.activate.on-profile: cloud
 
 ---
-spring:
-  rsocket:
-    server:
-      port: 1234
-      transport: websocket
-      mapping-path: /rsocket
-      data-mime-type: text/plain
+#logging.level.org.springframework: DEBUG
+logging:
+  level:
+    com:
+      sap:
+        cds:
+          framework:
+            spring:
+              config:
+                auth:
+                  mock: OFF
+
+          services:
+            impl:
+              persistence: OFF
+              utils: OFF
