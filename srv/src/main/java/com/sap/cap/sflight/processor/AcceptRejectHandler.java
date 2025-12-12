@@ -4,6 +4,8 @@ import static cds.gen.travelservice.TravelService_.TRAVEL;
 
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.sap.cds.ql.Select;
@@ -30,6 +32,8 @@ import cds.gen.travelservice.Travel_;
 @ServiceName(TravelService_.CDS_NAME)
 public class AcceptRejectHandler implements EventHandler {
 
+	private static final Logger log = LoggerFactory.getLogger(AcceptRejectHandler.class);
+
 	private static final String TRAVEL_STATUS_OPEN = "O";
 	private static final String TRAVEL_STATUS_ACCEPTED = "A";
 	private static final String TRAVEL_STATUS_CANCELLED = "X";
@@ -55,13 +59,12 @@ public class AcceptRejectHandler implements EventHandler {
 	private void beforeAcceptOrRejectTravel(CqnSelect select, UserInfo userInfo) {
 		Optional<Travel> travelToProcess = draftService.run(
 				Select.from(Travel_.class)
-					.where(select.from().asRef().targetSegment().filter().get())
-					.columns(
-						t -> t.DraftAdministrativeData().expand(d -> d.InProcessByUser()),
-						t -> t.TravelStatus_code(),
-						t -> t.IsActiveEntity()
-					)
-				).first(Travel.class);
+						.where(select.from().asRef().targetSegment().filter().get())
+						.columns(
+								t -> t.DraftAdministrativeData().expand(d -> d.InProcessByUser()),
+								t -> t.TravelStatus_code(),
+								t -> t.IsActiveEntity()))
+				.first(Travel.class);
 
 		travelToProcess.ifPresent(t -> {
 			checkIfTravelHasExceptedStatus(t);
@@ -81,6 +84,8 @@ public class AcceptRejectHandler implements EventHandler {
 	@On(entity = Travel_.CDS_NAME)
 	public void onAcceptTravel(final TravelAcceptTravelContext context) {
 		Travel travel = draftService.run(context.cqn()).single(Travel.class);
+		log.info("Accepting travel with ID: {}", travel.travelID());
+
 		context.getCdsRuntime().requestContext().privilegedUser().run(ctx -> {
 			updateStatusForTravelId(travel.travelUUID(), TRAVEL_STATUS_ACCEPTED, travel.isActiveEntity());
 		});
@@ -109,11 +114,14 @@ public class AcceptRejectHandler implements EventHandler {
 	}
 
 	private void checkIfTravelIsLockedByAnotherUser(Travel travel, UserInfo userInfo) {
-		if (!travel.isActiveEntity() && travel.draftAdministrativeData() != null && !travel.draftAdministrativeData().inProcessByUser().equals(userInfo.getName())) {
-			throw new ServiceException(ErrorStatuses.UNAUTHORIZED, String.format("The draft is locked by %s.", travel.draftAdministrativeData().inProcessByUser()));
+		if (!travel.isActiveEntity() && travel.draftAdministrativeData() != null
+				&& !travel.draftAdministrativeData().inProcessByUser().equals(userInfo.getName())) {
+			throw new ServiceException(ErrorStatuses.UNAUTHORIZED,
+					String.format("The draft is locked by %s.", travel.draftAdministrativeData().inProcessByUser()));
 		}
 		if (travel.isActiveEntity() && travel.draftAdministrativeData() != null) {
-			throw new ServiceException(ErrorStatuses.UNAUTHORIZED, String.format("The draft is locked by %s.", travel.draftAdministrativeData().inProcessByUser()));
+			throw new ServiceException(ErrorStatuses.UNAUTHORIZED,
+					String.format("The draft is locked by %s.", travel.draftAdministrativeData().inProcessByUser()));
 		}
 	}
 }

@@ -36,3 +36,12 @@ server:
 ---
 spring:
     config.activate.on-profile: cloud
+
+---
+spring:
+  rsocket:
+    server:
+      port: 1234
+      transport: websocket
+      mapping-path: /rsocket
+      data-mime-type: text/plain
